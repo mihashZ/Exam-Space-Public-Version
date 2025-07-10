@@ -154,6 +154,12 @@ function ViewResponsesModal({ isVisible, exam, onClose }) {
                           <span className="response-card-details">
                             &nbsp;|&nbsp;{resp.email} &nbsp;|&nbsp;{resp.username} &nbsp;|&nbsp;Roll: {resp.roll}
                             &nbsp;|&nbsp;Marks: <span className="response-card-marks">{resp.marksObtained}</span> / {resp.fullMarks}
+                            &nbsp;|&nbsp;Correct: <span style={{ color: 'green', fontWeight: 'bold' }}>
+                              {resp.responses.filter(q => q.correctAnswer === q.studentAnswer).length}
+                            </span>
+                            &nbsp;|&nbsp;Wrong: <span style={{ color: 'red', fontWeight: 'bold' }}>
+                              {resp.responses.filter(q => q.correctAnswer !== q.studentAnswer).length}
+                            </span>
                             &nbsp;|&nbsp;Submitted: {new Date(resp.submissionTime).toLocaleString()}
                           </span>
                         </span>
@@ -174,7 +180,6 @@ function ViewResponsesModal({ isVisible, exam, onClose }) {
                         </span>
                       </div>
                       <div style={{ display: 'none' }}>
-                        {/* Hidden printable content */}
                         <div ref={el => (printRefs.current[idx] = el)}>
                           <h2>Exam: {examInfo?.examName}</h2>
                           <div className="info">
@@ -184,6 +189,16 @@ function ViewResponsesModal({ isVisible, exam, onClose }) {
                             <div><strong>Roll:</strong> {resp.roll}</div>
                             <div><strong>Marks:</strong> {resp.marksObtained} / {resp.fullMarks}</div>
                             <div><strong>Submitted:</strong> {new Date(resp.submissionTime).toLocaleString()}</div>
+                            <div>
+                              <strong>Total Correct:</strong> {
+                                resp.responses.filter(q => q.correctAnswer === q.studentAnswer).length
+                              }
+                            </div>
+                            <div>
+                              <strong>Total Wrong:</strong> {
+                                resp.responses.filter(q => q.correctAnswer !== q.studentAnswer).length
+                              }
+                            </div>
                           </div>
                           <table>
                             <thead>

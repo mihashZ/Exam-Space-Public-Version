@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom' 
 import ExamSection from '../../components/ExamSection/ExamSection'
 import ResultSection from '../../components/ResultSection/ResultSection'
 import ProfileSection from '../../components/ProfileSection/ProfileSection'
@@ -10,6 +11,7 @@ function Dashboard() {
   const [userData, setUserData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeSection, setActiveSection] = useState('exams')
+  const navigate = useNavigate() 
 
   const getUserDataFromToken = () => {
     try {
@@ -79,6 +81,9 @@ function Dashboard() {
           <span className="user-greeting">
             Welcome {userData?.name || 'User'}
           </span>
+          <button className="logout-btn" onClick={() => navigate('/')}>
+            Back to Home
+          </button>
           <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>

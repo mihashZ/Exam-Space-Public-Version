@@ -91,12 +91,25 @@ function ResultSection() {
                   </div>
                   <div className="result-item">
                     <span className="result-label">Score:</span>
-                    <span className="result-value">{result.marksObtained}/{result.fullMarks}</span>
+                    <span className="result-value">
+                      {Math.round(
+                        (result.fullMarks / (result.totalRightAnswers + result.totalWrongAnswers)) *
+                        result.totalRightAnswers
+                      )} / {result.fullMarks}
+                    </span>
                   </div>
                   <div className="result-item">
                     <span className="result-label">Percentage:</span>
-                    <span className="result-value" style={{ color: getGradeColor(result.percentage) }}>
-                      {result.percentage}%
+                    <span
+                      className="result-value"
+                      style={{ color: getGradeColor(result.percentage) }}
+                    >
+                      {Math.round(
+                        ((result.fullMarks / (result.totalRightAnswers + result.totalWrongAnswers)) *
+                          result.totalRightAnswers /
+                          result.fullMarks) *
+                        100
+                      )}%
                     </span>
                   </div>
                   <div className="result-item">
