@@ -1,0 +1,198 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  cleanup-and-build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Aggressive cleanup of port 8081
+        run: |
+          # Stop all containers that might be using port 8081
+          docker ps -q | xargs -r docker stop || true
+          docker ps -aq | xargs -r docker rm -f || true
+          
+          # Clean up Docker networks
+          docker network prune -f || true
+          
+          # Kill processes on port 8081 (without sudo)
+          lsof -ti:8081 | xargs -r kill -9 || true
+          fuser -k 8081/tcp || true
+          
+          # Wait for port to be released
+          for i in {1..20}; do
+            if lsof -i:8081 2>/dev/null; then
+              echo "Waiting for port 8081 to be freed... (attempt $i/20)"
+              sleep 3
+            else
+              echo "Port 8081 is now free"
+              break
+            fi
+          done
+
+      - name: Clean old JAR files
+        run: |
+          rm -f Backend/demo/target/*.jar || true
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests --file Backend/demo/pom.xml
+
+      - name: Archive JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-jar
+          path: Backend/demo/target/demo-0.0.1-SNAPSHOT.jar
+
+  docker-and-deploy:
+    needs: cleanup-and-build
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-jar
+          path: Backend/demo/target
+
+      - name: Final aggressive cleanup
+        run: |
+          # Stop and remove all containers
+          docker ps -q | xargs -r docker stop || true
+          docker ps -aq | xargs -r docker rm -f || true
+          
+          # Clean Docker system
+          docker system prune -f || true
+          docker network prune -f || true
+          
+          # Kill any process using port 8081
+          lsof -ti:8081 | xargs -r kill -9 || true
+          fuser -k 8081/tcp || true
+          
+          # Wait longer for port release
+          for i in {1..30}; do
+            if lsof -i:8081 2>/dev/null; then
+              echo "Port 8081 still in use, waiting... (attempt $i/30)"
+              sleep 2
+            else
+              echo "Port 8081 is free"
+              break
+            fi
+          done
+          
+          # Final check
+          if lsof -i:8081 2>/dev/null; then
+            echo "WARNING: Port 8081 is still in use!"
+            lsof -i:8081 || true
+            echo "Attempting to find and kill the process..."
+            echo "=== Finding what's using port 8081 ==="
+            netstat -tulpn 2>/dev/null | grep 8081 || true
+            
+            echo "=== Stopping ALL Docker containers ==="
+            docker ps -q | xargs -r docker stop || true
+            docker ps -a -q | xargs -r docker rm -f || true
+            
+            echo "=== Killing ALL processes with port 8081 ==="
+            # Try several different methods
+            fuser -k 8081/tcp 2>/dev/null || true
+            pkill -f "8081" 2>/dev/null || true
+            
+            echo "=== Clean up Docker completely ==="
+            docker system prune -f || true
+            docker network prune -f || true
+            
+            echo "=== Waiting longer than usual ==="
+            sleep 10
+            
+            echo "=== Final check for port 8081 ==="
+            if netstat -tulpn 2>/dev/null | grep 8081; then
+              echo "CRITICAL: Port 8081 is STILL in use after all cleanup attempts"
+              echo "Process list:"
+              ps aux
+            else
+              echo "Port 8081 appears to be free now"
+            fi
+          fi
+
+      - name: Build Docker image with Compose
+        run: |
+          cd Backend/demo
+          docker compose build
+
+      - name: Final aggressive cleanup
+        run: |
+          # Stop and remove all containers
+          docker ps -q | xargs -r docker stop || true
+          docker ps -aq | xargs -r docker rm -f || true
+          
+          # Clean Docker system
+          docker system prune -f || true
+          docker network prune -f || true
+          
+          # Kill any process using port 8081
+          lsof -ti:8081 | xargs -r kill -9 || true
+          fuser -k 8081/tcp || true
+          
+          # Wait longer for port release
+          for i in {1..30}; do
+            if lsof -i:8081 2>/dev/null; then
+              echo "Port 8081 still in use, waiting... (attempt $i/30)"
+              sleep 2
+            else
+              echo "Port 8081 is free"
+              break
+            fi
+          done
+          
+          # Final check
+          if lsof -i:8081 2>/dev/null; then
+            echo "WARNING: Port 8081 is still in use!"
+            lsof -i:8081 || true
+            echo "Attempting to find and kill the process..."
+            echo "=== Finding what's using port 8081 ==="
+            netstat -tulpn 2>/dev/null | grep 8081 || true
+            
+            echo "=== Stopping ALL Docker containers ==="
+            docker ps -q | xargs -r docker stop || true
+            docker ps -a -q | xargs -r docker rm -f || true
+            
+            echo "=== Killing ALL processes with port 8081 ==="
+            # Try several different methods
+            fuser -k 8081/tcp 2>/dev/null || true
+            pkill -f "8081" 2>/dev/null || true
+            
+            echo "=== Clean up Docker completely ==="
+            docker system prune -f || true
+            docker network prune -f || true
+            
+            echo "=== Waiting longer than usual ==="
+            sleep 10
+            
+            echo "=== Final check for port 8081 ==="
+            if netstat -tulpn 2>/dev/null | grep 8081; then
+              echo "CRITICAL: Port 8081 is STILL in use after all cleanup attempts"
+              echo "Process list:"
+              ps aux
+            else
+              echo "Port 8081 appears to be free now"
+            fi
+          fi
+
+      - name: Start container with Compose Up
+        run: |
+          cd Backend/demo
+          docker compose up -d
+
+      - name: Verify deployment
+        run: |
+          docker ps
+          echo "Checking if application is responding..."
+          sleep 10
+          curl -f http://localhost:8081/actuator/health || echo "Health check failed"
