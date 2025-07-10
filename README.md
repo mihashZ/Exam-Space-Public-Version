@@ -388,3 +388,17 @@ CREATE TABLE `result` (
 )
 ```
 
+## 📜 License
+
+This software is licensed under a **Non-Commercial License**.  
+You are free to use, copy, and modify it for personal, educational, and research purposes.  
+**Commercial use is strictly prohibited.**  
+See the LICENSE file for full terms.
+
+## 👨‍💻 Developed By
+
+ExamSpace was designed and developed by Shubhodip Pal.
+
+GitHub: [Shubhodippal](https://github.com/Shubhodippal)  
+LinkedIn: [Shubhodip Pal](https://www.linkedin.com/in/shubhodip-pal/)  
+Email: shubhodippal01@gmail.com
