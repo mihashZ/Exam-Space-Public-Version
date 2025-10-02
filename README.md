@@ -85,8 +85,8 @@ Testing: React Testing Library, Jest
 ```
 
 For setup:
-Delete node_modules and package-lock.json  --->  **rm -rf node_modules package-lock.json
-**
+
+Delete node_modules and package-lock.json  --->  **rm -rf node_modules package-lock.json**
 Run **npm install**
 
 
