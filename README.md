@@ -216,7 +216,14 @@ ExamSpace uses a robust relational database schema with proper constraints and r
 </div>
 
 ### Database Tables and Relationships
+Check if MariaDB is already running:
 
+**sudo systemctl status mariadb**
+
+
+Start it if it’s not running:
+
+**sudo systemctl start mariadb**
 #### Users Table
 
 ```sql
